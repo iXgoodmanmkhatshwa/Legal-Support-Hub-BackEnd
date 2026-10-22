@@ -4,6 +4,7 @@ import java.math.*;
 import java.time.*;
 import java.util.*;
 import static za.co.ixengineers.legal.matter.Domain.*;
+import org.springframework.core.io.Resource;
 public final class MatterDtos{
     private MatterDtos(){}
     public record CreateMatterRequest(
@@ -36,5 +37,12 @@ public final class MatterDtos{
     public record DocumentResponse(UUID id,String fileName,String contentType,
                                    long sizeBytes,DocumentCategory category,String webUrl,Instant uploadedAt){
 
+    }
+    public record DownloadedDocument(
+            String fileName,
+            String contentType,
+            Long sizeBytes,
+            Resource resource
+    ) {
     }
 }

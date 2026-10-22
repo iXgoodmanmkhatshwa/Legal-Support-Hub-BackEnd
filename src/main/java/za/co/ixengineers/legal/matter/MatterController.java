@@ -25,6 +25,15 @@ import java.io.IOException;
 import static za.co.ixengineers.legal.matter.Domain.*;
 import static za.co.ixengineers.legal.matter.MatterDtos.*;
 
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+
 @RestController
 @RequestMapping("/api/matters")
 @RequiredArgsConstructor
@@ -35,14 +44,8 @@ public class MatterController {
     @GetMapping
     Page<MatterResponse> list(
             @AuthenticationPrincipal Jwt jwt,
-
-            @PageableDefault(
-                    size = 20,
-                    sort = "createdAt",
-                    direction = Sort.Direction.DESC
-            )
-            Pageable pageable
-    ) {
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            Pageable pageable) {
         return service.list(
                 CurrentUser.from(jwt),
                 pageable
@@ -66,9 +69,7 @@ public class MatterController {
     }
 
     @PostMapping("/{ref}/assignments")
-    @PreAuthorize(
-            "hasAnyRole('LEGAL_ADMIN','HEAD_OF_LEGAL')"
-    )
+    @PreAuthorize("hasAnyRole('LEGAL_ADMIN','HEAD_OF_LEGAL','SYSTEM_ADMIN')")
     MatterResponse assign(
             @PathVariable
             String ref,
@@ -80,17 +81,13 @@ public class MatterController {
             @AuthenticationPrincipal
             Jwt jwt
     ) {
-        return service.assign(
-                ref,
-                request,
-                CurrentUser.from(jwt)
-        );
+        return service.assign(ref, request, CurrentUser.from(jwt));
     }
 
     @PatchMapping("/{ref}/status")
     @PreAuthorize(
             "hasAnyRole(" +
-                    "'LEGAL_ADMIN'," +
+                    "'LEGAL_ADMIN'," +"'SYSTEM_ADMIN',"+
                     "'LEGAL_USER'," +
                     "'HEAD_OF_LEGAL'" +
                     ")"
@@ -106,12 +103,24 @@ public class MatterController {
             @AuthenticationPrincipal
             Jwt jwt
     ) {
-        return service.status(
-                ref,
-                request,
-                CurrentUser.from(jwt)
-        );
+        return service.status(ref, request, CurrentUser.from(jwt));
     }
+
+
+
+    private MediaType safeMediaType(String contentType) {
+        if (contentType == null ||
+                contentType.isBlank()) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        try {
+            return MediaType.parseMediaType(contentType);
+        } catch (IllegalArgumentException exception) {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
+    }
+
 
     @PostMapping(
             path = "/{ref}/documents",
@@ -119,17 +128,10 @@ public class MatterController {
     )
     @ResponseStatus(HttpStatus.CREATED)
     DocumentResponse document(
-            @PathVariable
-            String ref,
-
-            @RequestParam
-            DocumentCategory category,
-
-            @RequestPart("file")
-            MultipartFile file,
-
-            @AuthenticationPrincipal
-            Jwt jwt
+            @PathVariable String ref,
+            @RequestParam DocumentCategory category,
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal Jwt jwt
     ) throws IOException {
         return service.upload(
                 ref,
@@ -138,6 +140,68 @@ public class MatterController {
                 CurrentUser.from(jwt)
         );
     }
+
+    @GetMapping("/{ref}/documents")
+    @PreAuthorize("""
+    hasAnyRole(
+        'SYSTEM_ADMIN',
+        'HEAD_OF_LEGAL',
+        'LEGAL_ADMIN',
+        'LEGAL_USER'
+    )
+    """)
+    List<DocumentResponse> listDocuments(
+            @PathVariable String ref,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return service.listDocuments(
+                ref,
+                CurrentUser.from(jwt)
+        );
+    }
+
+    @GetMapping("/{ref}/documents/{documentId}/content")
+    @PreAuthorize("""
+    hasAnyRole(
+        'SYSTEM_ADMIN',
+        'HEAD_OF_LEGAL',
+        'LEGAL_ADMIN',
+        'LEGAL_USER'
+    )
+    """)
+    ResponseEntity<Resource> downloadDocument(
+            @PathVariable String ref,
+            @PathVariable UUID documentId,
+            @AuthenticationPrincipal Jwt jwt
+    ) throws IOException {
+
+        DownloadedDocument document =
+                service.downloadDocument(
+                        ref,
+                        documentId,
+                        CurrentUser.from(jwt)
+                );
+
+        MediaType contentType =
+                safeMediaType(document.contentType());
+
+        return ResponseEntity.ok()
+                .contentType(contentType)
+                .contentLength(document.contentLength())
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition
+                                .attachment()
+                                .filename(
+                                        document.fileName(),
+                                        StandardCharsets.UTF_8
+                                )
+                                .build()
+                                .toString()
+                )
+                .body(document.resource());
+    }
+
 
     @PostMapping("/{ref}/feedback")
     @ResponseStatus(HttpStatus.CREATED)

@@ -8,8 +8,12 @@ interface MatterRepository extends JpaRepository<Matter,UUID>{
 }
 interface DocumentRepository extends JpaRepository<DocumentRecord,UUID>{
     List<DocumentRecord> findByMatterIdOrderByUploadedAtDesc(UUID matterId);
+    List<DocumentRecord> findAllByMatterIdOrderByUploadedAtDesc(UUID matterId);
+
+    Optional<DocumentRecord> findByIdAndMatterId(UUID documentId, UUID matterId);
 }
 interface AuditRepository extends JpaRepository<AuditEvent,UUID>{
     List<AuditEvent> findByMatterIdOrderByOccurredAtDesc(UUID matterId);
 }
 interface FeedbackRepository extends JpaRepository<Feedback,UUID>{}
+

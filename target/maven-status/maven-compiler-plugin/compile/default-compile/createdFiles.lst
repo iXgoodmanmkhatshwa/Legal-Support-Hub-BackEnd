@@ -1,10 +1,12 @@
 za\co\ixengineers\legal\contract\ContractRecord.class
 za\co\ixengineers\legal\matter\MatterController.class
 za\co\ixengineers\legal\contract\ContractDtos$ConfirmContractRequest.class
+za\co\ixengineers\legal\matter\DownloadedDocument.class
 za\co\ixengineers\legal\contract\ContractDtos$ContractDocumentResponse.class
 za\co\ixengineers\legal\contract\ContractDtos$ContractResponse.class
 za\co\ixengineers\legal\admin\AdminConfigurationService$1.class
 za\co\ixengineers\legal\matter\MatterDtos$DocumentResponse.class
+za\co\ixengineers\legal\matter\MatterDtos$DownloadedDocument.class
 za\co\ixengineers\legal\admin\DeadlineRuleRepository.class
 za\co\ixengineers\legal\document\LocalDocumentStorage.class
 za\co\ixengineers\legal\matter\AuditEvent.class
