@@ -40,20 +40,11 @@ import org.springframework.http.HttpStatus;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-    ) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        return http
-                .csrf(csrf -> csrf.disable())
+        return http.csrf(csrf -> csrf.disable()).cors(cors -> {})
 
-                .cors(cors -> {
-                })
-
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
                 .authorizeHttpRequests(authorize ->
@@ -203,20 +194,9 @@ public class SecurityConfig {
         CorsConfiguration configuration =
                 new CorsConfiguration();
 
-        configuration.setAllowedOrigins(
-                List.of("http://localhost:4200")
-        );
+        configuration.setAllowedOrigins(List.of("https://legal-support-hub-frontend.onrender.com"));
 
-        configuration.setAllowedMethods(
-                List.of(
-                        "GET",
-                        "POST",
-                        "PATCH",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS"
-                )
-        );
+        configuration.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"));
 
         configuration.setAllowedHeaders(
                 List.of(
